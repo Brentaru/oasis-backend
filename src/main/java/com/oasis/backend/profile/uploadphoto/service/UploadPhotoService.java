@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ public class UploadPhotoService {
 
             String extension = resolveExtension(contentType, originalFileName);
             String fileName = userId + "_" + System.currentTimeMillis() + extension;
+            String profilePhoto = toDataUrl(photoBytes, contentType);
 
             // Supabase/Postgres bytea accepts hex format like: \xFFD8...
             String byteaHex = toPostgresBytea(photoBytes);
@@ -77,7 +79,7 @@ public class UploadPhotoService {
 
             Map<String, Object> body = new HashMap<>();
             body.put("photo_bytes", byteaHex);
-            body.put("profile_photo", fileName);
+            body.put("profile_photo", profilePhoto);
 
             System.out.println("Upload photo DB request -> url: " + url);
             System.out.println("Upload photo DB request -> contentType: " + contentType + ", size: " + file.getSize());
@@ -91,7 +93,7 @@ public class UploadPhotoService {
                 return ResponseEntity.status(404).body("Profile not found.");
             }
 
-            return ResponseEntity.ok(new UploadPhotoResponse("Photo uploaded successfully.", fileName));
+            return ResponseEntity.ok(new UploadPhotoResponse("Photo uploaded successfully.", profilePhoto));
 
         } catch (HttpClientErrorException e) {
             e.printStackTrace();
@@ -137,5 +139,10 @@ public class UploadPhotoService {
             hex.append(String.format("%02x", b));
         }
         return "\\x" + hex;
+    }
+
+    private String toDataUrl(byte[] bytes, String contentType) {
+        String base64 = Base64.getEncoder().encodeToString(bytes);
+        return "data:" + contentType + ";base64," + base64;
     }
 }
