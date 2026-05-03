@@ -121,8 +121,6 @@ public class RegisterService {
         profileBody.put("user_id", userId);
         profileBody.put("email", email);
         profileBody.put("full_name", null);
-        profileBody.put("phone", null);
-        profileBody.put("bio", null);
         profileBody.put("profile_photo", null);
 
         try {

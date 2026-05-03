@@ -4,8 +4,6 @@ public record GetProfileResponse(
         String userId,
         String fullName,
         String email,
-        String phone,
-        String bio,
         String profilePhoto
 ) {
 }

@@ -56,13 +56,6 @@ public class EditProfileService {
         if (req.email() != null && !req.email().isBlank()) {
             body.put("email", req.email());
         }
-        if (req.phone() != null && !req.phone().isBlank()) {
-            body.put("phone", req.phone());
-        }
-        if (req.bio() != null && !req.bio().isBlank()) {
-            body.put("bio", req.bio());
-        }
-
         if (body.isEmpty()) {
             return ResponseEntity.badRequest().body("At least one profile field is required.");
         }
@@ -95,8 +88,6 @@ public class EditProfileService {
                     value(row.get("user_id")),
                     value(row.get("full_name")),
                     value(row.get("email")),
-                    value(row.get("phone")),
-                    value(row.get("bio")),
                     value(row.get("profile_photo")),
                     "Profile updated successfully."
             );

@@ -42,7 +42,7 @@ public class GetProfileService {
 
         String url = supabaseUrl + "/rest/v1/" + profileTable
                 + "?user_id=eq." + userId
-                + "&select=user_id,full_name,email,phone,bio,profile_photo";
+                + "&select=user_id,full_name,email,profile_photo";
 
         try {
             RestTemplate rt = new RestTemplate();
@@ -65,8 +65,6 @@ public class GetProfileService {
                     value(row.get("user_id")),
                     value(row.get("full_name")),
                     value(row.get("email")),
-                    value(row.get("phone")),
-                    value(row.get("bio")),
                     value(row.get("profile_photo"))
             );
 
