@@ -7,6 +7,7 @@ import com.oasis.backend.source.mangadex.dto.MangaDexChapterResponse;
 import com.oasis.backend.source.mangadex.dto.MangaDexPageResponse;
 import com.oasis.backend.source.mangadex.dto.MangaDexSeriesDetailsResponse;
 import com.oasis.backend.source.mangadex.dto.MangaDexSeriesResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,6 +19,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -30,6 +33,9 @@ public class MangaDexService {
     private static final String API_BASE_URL = "https://api.mangadex.org";
     private static final String COVER_BASE_URL = "https://uploads.mangadex.org/covers";
     private static final String SOURCE = "mangadex";
+
+    @Value("${app.public-base-url:https://oasis-backend-zfr5.onrender.com}")
+    private String publicBaseUrl;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
@@ -152,7 +158,7 @@ public class MangaDexService {
                 pages.add(new MangaDexPageResponse(
                         chapterId + "-" + (i + 1),
                         i + 1,
-                        baseUrl + "/" + quality + "/" + hash + "/" + file
+                        proxiedImageUrl(baseUrl + "/" + quality + "/" + hash + "/" + file)
                 ));
             }
 
@@ -354,11 +360,16 @@ public class MangaDexService {
 
             String fileName = value(map(relationship.get("attributes")).get("fileName"));
             if (!isBlank(fileName)) {
-                return COVER_BASE_URL + "/" + mangaId + "/" + fileName + ".256.jpg";
+                return proxiedImageUrl(COVER_BASE_URL + "/" + mangaId + "/" + fileName + ".256.jpg");
             }
         }
 
         return null;
+    }
+
+    private String proxiedImageUrl(String imageUrl) {
+        String baseUrl = publicBaseUrl == null ? "" : publicBaseUrl.replaceAll("/+$", "");
+        return baseUrl + "/api/sources/mangadex/image?url=" + URLEncoder.encode(imageUrl, StandardCharsets.UTF_8);
     }
 
     private String firstTag(Map<String, Object> attributes) {
