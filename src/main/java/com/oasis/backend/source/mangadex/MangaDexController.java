@@ -53,4 +53,9 @@ public class MangaDexController {
     ) {
         return mangaDexService.getChapterNavigation(mangaId, chapterId);
     }
+
+    @GetMapping("/image")
+    public ResponseEntity<?> proxyImage(@RequestParam String url) {
+        return mangaDexService.proxyImage(url);
+    }
 }

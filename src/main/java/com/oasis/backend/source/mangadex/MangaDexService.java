@@ -10,6 +10,7 @@ import com.oasis.backend.source.mangadex.dto.MangaDexSeriesResponse;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
@@ -203,6 +204,47 @@ public class MangaDexService {
         }
     }
 
+    public ResponseEntity<?> proxyImage(String imageUrl) {
+        if (isBlank(imageUrl)) {
+            return ResponseEntity.badRequest().body("Image URL is required.");
+        }
+
+        try {
+            URI uri = URI.create(imageUrl);
+            if (!isAllowedImageHost(uri)) {
+                return ResponseEntity.badRequest().body("Unsupported image host.");
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+            headers.set("Referer", "https://mangadex.org/");
+            headers.set("User-Agent", "Mozilla/5.0 OasisProject/1.0");
+
+            ResponseEntity<byte[]> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    byte[].class
+            );
+
+            HttpHeaders outputHeaders = new HttpHeaders();
+            MediaType contentType = response.getHeaders().getContentType();
+            outputHeaders.setContentType(contentType == null ? MediaType.IMAGE_JPEG : contentType);
+            outputHeaders.setCacheControl("public, max-age=86400");
+
+            return ResponseEntity
+                    .status(response.getStatusCode())
+                    .headers(outputHeaders)
+                    .body(response.getBody());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid image URL.");
+        } catch (RestClientResponseException e) {
+            return ResponseEntity.status(e.getStatusCode()).body("Failed to load MangaDex image.");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to load MangaDex image.");
+        }
+    }
+
     private List<MangaDexChapterResponse> loadChapters(String mangaId, int limit) throws Exception {
         URI uri = UriComponentsBuilder
                 .fromHttpUrl(API_BASE_URL + "/manga/" + mangaId + "/feed")
@@ -378,6 +420,16 @@ public class MangaDexService {
                 new TypeReference<Map<String, Object>>() {
                 }
         );
+    }
+
+    private boolean isAllowedImageHost(URI uri) {
+        String host = uri.getHost();
+        if (host == null) {
+            return false;
+        }
+
+        return "uploads.mangadex.org".equalsIgnoreCase(host)
+                || host.toLowerCase().endsWith(".mangadex.network");
     }
 
     private String localized(Object raw) {
